@@ -61,7 +61,7 @@ bot.on("text", async function(ctx) {
     userScript = await isolate.compileScript("" + ctx.message.text);
   } catch (error) {
     console.log(ctx.message, "compilation error", error.message);
-    ctx.reply(error.message);
+    ctx.reply(error.message.replace(/\ \[\<isolated-vm.*/, ""));
     return;
   }
 
@@ -70,7 +70,7 @@ bot.on("text", async function(ctx) {
     ctx.reply(userScriptResult);
   } catch (error) {
     console.log(ctx.message, "runtime error", error.message);
-    ctx.reply(error.message);
+    ctx.reply(error.message.replace(/\ \[\<isolated-vm.*/, ""));
   }
 });
 
