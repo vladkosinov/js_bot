@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "agent-base": "^4.2.1",
+    "isolated-vm": "^1.7.9",
+    "socks": "^2.3.2",
+    "telegraf": "^3.27.1"
+  },
+  "devDependencies": {
+    "shipit-cli": "^4.2.0",
+    "shipit-deploy": "^4.1.4"
+  }
+}
