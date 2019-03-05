@@ -14,7 +14,10 @@ module.exports = shipit => {
 
   shipit.blTask("start_server", function() {
     var cwd = shipit.releasePath;
-    return shipit.remote("cd " + cwd + " && npm install && npm start");
+    return shipit.remote(
+      `cd ${cwd} && yarn && forever stop js_bot
+      forever start --minUptime 2000 --spinSleepTime 2000 --uid js_bot --append -e /var/apps/js_bot/log/error.log -o /var/apps/js_bot/log/out.log -l /var/apps/js_bot/log/forever.log ./bot.js`
+    );
   });
 
   shipit.on("cleaned", function() {
