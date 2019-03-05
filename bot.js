@@ -21,8 +21,7 @@ bot.on("text", async function(ctx) {
   jail.setSync(
     "_log",
     new ivm.Reference(function(...args) {
-      console.log(...args);
-      ctx.reply(args[0]);
+      ctx.reply(args.join(", "));
     })
   );
 
@@ -58,10 +57,10 @@ bot.on("text", async function(ctx) {
 
   let userScript;
   try {
-    console.log("User message", ctx.message.text);
+    console.log(ctx.message, "message", ctx.message.text);
     userScript = await isolate.compileScript("" + ctx.message.text);
   } catch (error) {
-    console.log("Compilation error", error.message);
+    console.log(ctx.message, "compilation error", error.message);
     ctx.reply(error.message);
     return;
   }
@@ -70,7 +69,7 @@ bot.on("text", async function(ctx) {
     const userScriptResult = await userScript.run(context);
     ctx.reply(userScriptResult);
   } catch (error) {
-    console.log("Runtime error", error.message);
+    console.log(ctx.message, "runtime error", error.message);
     ctx.reply(error.message);
   }
 });
