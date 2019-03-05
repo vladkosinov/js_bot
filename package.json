@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "start": "pm2 startOrReload ecosystem.config.js --env production"
+  },
   "dependencies": {
     "agent-base": "^4.2.1",
     "isolated-vm": "^1.7.9",

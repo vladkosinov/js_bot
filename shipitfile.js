@@ -4,11 +4,21 @@ module.exports = shipit => {
 
   shipit.initConfig({
     default: {
-      deployTo: "/var/apps/super-project",
-      repositoryUrl: "https://github.com/user/super-project.git"
+      deployTo: "/var/apps/js_bot",
+      repositoryUrl: "git@github.com:vlkosinov/js_bot.git"
     },
-    staging: {
-      servers: "deploy@staging.super-project.com"
+    production: {
+      servers: "deleted@before.publish"
     }
+  });
+
+  shipit.blTask("start_server", function() {
+    var cwd = shipit.releasePath;
+    return shipit.remote("cd " + cwd + " && npm install && npm start");
+  });
+
+  shipit.on("cleaned", function() {
+    console.log("Deployed !");
+    shipit.start("start_server");
   });
 };
