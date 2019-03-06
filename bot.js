@@ -1,14 +1,6 @@
 const Telegraf = require("telegraf");
-const SocksProxyAgent = require("./socks-proxy-agent");
 const ivm = require("isolated-vm");
 const throttle = require("lodash").throttle;
-
-console.log("process.env.NODE_ENV", process.env.NODE_ENV);
-const options = {
-  telegram: {
-    agent: new SocksProxyAgent("socks://deleted:deleted@before.publish/")
-  }
-};
 
 const bot = new Telegraf("DELETED_BEFORE_PUBLISH");
 
@@ -22,7 +14,6 @@ bot.on("text", async function(ctx) {
   let isolate = new ivm.Isolate({ memoryLimit: 32 });
   let context = await isolate.createContext();
 
-  // Get a Reference{} to the global object within the context.
   let jail = context.global;
   await jail.set("_ivm", ivm);
   await jail.set("global", jail.derefInto());
@@ -83,7 +74,10 @@ bot.on("text", async function(ctx) {
     const userScriptResult = await userScript.run(context, {
       timeout: 1000
     });
-    ctx.reply(userScriptResult);
+
+    if (userScriptResult) {
+      ctx.reply(userScriptResult);
+    }
   } catch (error) {
     console.log(ctx.message, "runtime error", error.message);
     ctx.reply(error.message.replace(/\ \[\<isolated-vm.*/, ""));
