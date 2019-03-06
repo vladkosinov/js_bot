@@ -2,23 +2,26 @@ const Telegraf = require("telegraf");
 const SocksProxyAgent = require("./socks-proxy-agent");
 let ivm = require("isolated-vm");
 
-const bot = new Telegraf("DELETED_BEFORE_PUBLISH", {
+console.log("process.env.NODE_ENV", process.env.NODE_ENV);
+const options = {
   telegram: {
     agent: new SocksProxyAgent("socks://deleted:deleted@before.publish/")
   }
-});
+};
+
+const bot = new Telegraf("DELETED_BEFORE_PUBLISH");
 
 bot.start(ctx => ctx.reply("Send me JS and I'll execute it😎"));
 
 bot.on("text", async function(ctx) {
   let isolate = new ivm.Isolate({ memoryLimit: 32 });
-  let context = isolate.createContextSync();
+  let context = await isolate.createContext();
 
   // Get a Reference{} to the global object within the context.
   let jail = context.global;
-  jail.setSync("_ivm", ivm);
-  jail.setSync("global", jail.derefInto());
-  jail.setSync(
+  await jail.set("_ivm", ivm);
+  await jail.set("global", jail.derefInto());
+  await jail.set(
     "_log",
     new ivm.Reference(function(...args) {
       ctx.reply(args.join(", "));
@@ -53,7 +56,9 @@ bot.on("text", async function(ctx) {
       }
   );
 
-  await bootstrapScript.run(context);
+  await bootstrapScript.run(context, {
+    timeout: 2000
+  });
 
   let userScript;
   try {
