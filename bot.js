@@ -13,6 +13,10 @@ const bot = new Telegraf("DELETED_BEFORE_PUBLISH");
 
 bot.start(ctx => ctx.reply("Send me JS and I'll execute it😎"));
 
+bot.catch(err => {
+  console.log("Ooops", err);
+});
+
 bot.on("text", async function(ctx) {
   let isolate = new ivm.Isolate({ memoryLimit: 32 });
   let context = await isolate.createContext();
