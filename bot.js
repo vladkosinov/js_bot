@@ -1,6 +1,7 @@
 const Telegraf = require("telegraf");
 const SocksProxyAgent = require("./socks-proxy-agent");
-let ivm = require("isolated-vm");
+const ivm = require("isolated-vm");
+const throttle = require("lodash").throttle;
 
 console.log("process.env.NODE_ENV", process.env.NODE_ENV);
 const options = {
@@ -25,10 +26,16 @@ bot.on("text", async function(ctx) {
   let jail = context.global;
   await jail.set("_ivm", ivm);
   await jail.set("global", jail.derefInto());
+
+  const logThrottled = throttle((...args) => ctx.reply(args.join(", ")), 100, {
+    leading: false,
+    trailing: true
+  });
+
   await jail.set(
     "_log",
     new ivm.Reference(function(...args) {
-      ctx.reply(args.join(", "));
+      logThrottled(...args);
     })
   );
 
@@ -74,7 +81,7 @@ bot.on("text", async function(ctx) {
 
   try {
     const userScriptResult = await userScript.run(context, {
-      timeout: 2000
+      timeout: 1000
     });
     ctx.reply(userScriptResult);
   } catch (error) {
