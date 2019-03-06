@@ -60,9 +60,7 @@ bot.on("text", async function(ctx) {
       }
   );
 
-  await bootstrapScript.run(context, {
-    timeout: 2000
-  });
+  await bootstrapScript.run(context);
 
   let userScript;
   try {
@@ -75,7 +73,9 @@ bot.on("text", async function(ctx) {
   }
 
   try {
-    const userScriptResult = await userScript.run(context);
+    const userScriptResult = await userScript.run(context, {
+      timeout: 2000
+    });
     ctx.reply(userScriptResult);
   } catch (error) {
     console.log(ctx.message, "runtime error", error.message);
