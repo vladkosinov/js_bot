@@ -124,7 +124,7 @@ bot.on("text", async function(ctx) {
     });
   } catch (error) {
     console.log("userScript.run error", ctx.message, error);
-    ctx.reply("Something goes wrong :(");
+    ctx.reply(filterOutput(String(error)));
   }
 });
 
