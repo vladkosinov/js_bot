@@ -13,7 +13,7 @@ function parseCodeAndModify() {
   let isLastNodeIsExpression = lastNode.type === "ExpressionStatement";
   if (
     !isLastNodeIsExpression &&
-    body.length === 1 &&
+    ast.body.length === 1 &&
     lastNode.type === "BlockStatement"
   ) {
     try {
