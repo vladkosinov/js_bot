@@ -11,7 +11,11 @@ function parseCodeAndModify() {
   const lastNodeCode = originalCode.slice(lastNode.start);
 
   let isLastNodeIsExpression = lastNode.type === "ExpressionStatement";
-  if (!isLastNodeIsExpression && lastNode.type === "BlockStatement") {
+  if (
+    !isLastNodeIsExpression &&
+    body.length === 1 &&
+    lastNode.type === "BlockStatement"
+  ) {
     try {
       cherow.parseExpression(lastNodeCode);
       isLastNodeIsExpression = true;
