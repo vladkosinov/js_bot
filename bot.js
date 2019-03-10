@@ -113,7 +113,7 @@ bot.on("text", async function(ctx) {
     await global.set(
       "_handleIsolateException",
       new ivm.Reference((output, errorMessage, errorStack) => {
-        const message = `${output || ""}${errorStack || errorMessage}`;
+        const message = `${output || ""}${errorMessage}`;
         console.log("Reply exception", ctx.message, message);
         ctx.reply(filterOutput(message));
       })
@@ -124,7 +124,7 @@ bot.on("text", async function(ctx) {
     });
   } catch (error) {
     console.log("userScript.run error", ctx.message, error);
-    ctx.reply(filterOutput(String(error)));
+    ctx.reply(filterOutput(String(error.message || error)));
   }
 });
 
