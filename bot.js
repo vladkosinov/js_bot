@@ -22,8 +22,7 @@ bot.on("text", async function(ctx) {
     userCodeToExecute = await addTrapForLastExpression("" + ctx.message.text);
   } catch (error) {
     console.log("addTrapForLastExpression error", ctx.message, error);
-    ctx.reply(filterOutput(error.message));
-    return;
+    // ignore code modification error
   }
 
   let isolate = new ivm.Isolate({ memoryLimit: 8 });

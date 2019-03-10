@@ -6,7 +6,7 @@ const cherowScriptContent = fs.readFileSync(
 );
 
 function parseCodeAndModify() {
-  const ast = cherow.parse(originalCode, { ranges: true });
+  const ast = cherow.parse(originalCode, { ranges: true, experimental: true });
   const lastNode = ast.body[ast.body.length - 1];
   const lastNodeCode = originalCode.slice(lastNode.start);
 
