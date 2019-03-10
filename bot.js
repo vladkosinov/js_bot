@@ -1,6 +1,6 @@
 const Telegraf = require("telegraf");
 const ivm = require("isolated-vm");
-const throttle = require("lodash").throttle;
+const addTrapForLastExpression = require("./addTrapForLastExpression");
 
 const bot = new Telegraf("DELETED_BEFORE_PUBLISH");
 
@@ -10,77 +10,121 @@ bot.catch(err => {
   console.log("Ooops", err);
 });
 
+function filterOutput(message = "") {
+  return message.replace(/isolated\-vm/g, "vm");
+}
+
 bot.on("text", async function(ctx) {
-  let isolate = new ivm.Isolate({ memoryLimit: 32 });
+  console.log("Message", ctx.message);
+
+  let userCodeToExecute;
+  try {
+    userCodeToExecute = await addTrapForLastExpression("" + ctx.message.text);
+  } catch (error) {
+    console.log("addTrapForLastExpression error", ctx.message, error);
+    ctx.reply(filterOutput(error.message));
+    return;
+  }
+
+  let isolate = new ivm.Isolate({ memoryLimit: 8 });
   let context = await isolate.createContext();
 
-  let jail = context.global;
-  await jail.set("_ivm", ivm);
-  await jail.set("global", jail.derefInto());
+  let global = context.global;
+  global.setSync("_ivm", ivm);
+  global.setSync("global", global.derefInto());
 
-  const logThrottled = throttle((...args) => ctx.reply(args.join(", ")), 100, {
-    leading: false,
-    trailing: true
-  });
+  const userScriptWrapped = `
+    (function (messageFunction) {
+      const ivm = _ivm;
+      const handleIsolateResult = _handleIsolateResult;
+      const handleIsolateException = _handleIsolateException;
+      delete _ivm;
+      delete _handleIsolateResult;
+      delete _handleIsolateException;
 
-  await jail.set(
-    "_log",
-    new ivm.Reference(function(...args) {
-      logThrottled(...args);
-    })
-  );
-
-  const bootstrapScript = await isolate.compileScript(
-    "new " +
-      function() {
-        // Grab a reference to the ivm module and delete it from global scope. Now this closure is the
-        // only place in the context with a reference to the module. The `ivm` module is very powerful
-        // so you should not put it in the hands of untrusted code.
-        let ivm = _ivm;
-        delete _ivm;
-
-        // Now we create the other half of the `log` function in this isolate. We'll just take every
-        // argument, create an external copy of it and pass it along to the log function above.
-        let log = _log;
-        delete _log;
-        global.console = {
-          log: function(...args) {
-            // We use `copyInto()` here so that on the other side we don't have to call `copy()`. It
-            // doesn't make a difference who requests the copy, the result is the same.
-            // `applyIgnored` calls `log` asynchronously but doesn't return a promise-- it ignores the
-            // return value or thrown exception from `log`.
-            log.applyIgnored(
-              undefined,
-              args.map(arg => new ivm.ExternalCopy(arg).copyInto())
-            );
+      let output = "";
+      global.console = {
+        log: function(...args) {
+          if (output.length === 4096) {
+            return;
           }
-        };
-      }
-  );
 
-  await bootstrapScript.run(context);
+          const message = args.join(", ");
+          const messageLength = message.length;
+          output += message + "\\n";
+
+          if (output.length > 4096) {
+            output = output.slice(0, 4096 - 3) + "...";
+          }
+        }
+      };
+
+      class MessageContext {};
+      const messageContext = new MessageContext();
+      try {
+        messageFunction.call(messageContext);
+      } catch(error) {
+        return handleIsolateException.applySync(
+          undefined,
+          [
+            new ivm.ExternalCopy(output).copyInto(),
+            new ivm.ExternalCopy((error && error.message) || "Error: " + error).copyInto(),
+            new ivm.ExternalCopy((error && error.stack)).copyInto(),
+          ],
+        );
+      }
+
+      const messageFunctionLastExpression = messageContext.JS_BOT_LAST_EXPRESSION_RESULT;
+
+      handleIsolateResult.applySync(
+        undefined,
+        [
+          new ivm.ExternalCopy(output).copyInto(),
+          new ivm.ExternalCopy(messageFunctionLastExpression).copyInto(),
+        ],
+      );
+    }(function root () {
+      'use strict';
+      ${userCodeToExecute}
+    }));
+    `;
 
   let userScript;
   try {
-    console.log(ctx.message, "message", ctx.message.text);
-    userScript = await isolate.compileScript("" + ctx.message.text);
+    userScript = await isolate.compileScript(userScriptWrapped, {
+      filename: "message.js"
+    });
   } catch (error) {
-    console.log(ctx.message, "compilation error", error.message);
-    ctx.reply(error.message.replace(/\ \[\<isolated-vm.*/, ""));
+    console.log("isolate.compileScript error", ctx.message, error.message);
+    ctx.reply(filterOutput(error.message));
     return;
   }
 
   try {
-    const userScriptResult = await userScript.run(context, {
+    await global.set(
+      "_handleIsolateResult",
+      new ivm.Reference((output, lastResult) => {
+        const message = `${output || ""}${lastResult}`;
+        console.log("Reply success", ctx.message, message);
+        ctx.reply(filterOutput(message));
+      })
+    );
+
+    await global.set(
+      "_handleIsolateException",
+      new ivm.Reference((output, errorMessage, errorStack) => {
+        const message = `${output || ""}${errorStack || errorMessage}`;
+        console.log("Reply exception", ctx.message, message);
+        ctx.reply(filterOutput(message));
+      })
+    );
+
+    await userScript.run(context, {
       timeout: 1000
     });
-
-    if (userScriptResult) {
-      ctx.reply(userScriptResult);
-    }
   } catch (error) {
-    console.log(ctx.message, "runtime error", error.message);
-    ctx.reply(error.message.replace(/\ \[\<isolated-vm.*/, ""));
+    console.log("userScript.run error", ctx.message, error);
+    ctx.reply("Something goes wrong :(");
   }
 });
 
