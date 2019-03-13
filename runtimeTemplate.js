@@ -29,8 +29,10 @@
 
   class MessageContext {}
   const messageContext = new MessageContext();
+  let messageFunctionReturn;
+
   try {
-    messageFunction.call(messageContext);
+    messageFunctionReturn = messageFunction.call(messageContext);
   } catch (error) {
     return handleIsolateException.applySync(undefined, [
       new ivm.ExternalCopy(output).copyInto(),
@@ -44,9 +46,11 @@
   const messageFunctionLastExpression =
     messageContext.JS_BOT_LAST_EXPRESSION_RESULT;
 
+  const runtimeResult = messageFunctionReturn || messageFunctionLastExpression;
+
   handleIsolateResult.applySync(undefined, [
     new ivm.ExternalCopy(output).copyInto(),
-    new ivm.ExternalCopy(messageFunctionLastExpression).copyInto()
+    new ivm.ExternalCopy(runtimeResult).copyInto()
   ]);
 })(function root() {
   // USER_CODE
