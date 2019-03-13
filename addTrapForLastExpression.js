@@ -33,20 +33,22 @@ function parseCodeAndModify() {
   return preExpressionCode + modifiedLastExpression;
 }
 
-module.exports = async function preprocessUserScript(userScriptContent) {
-  const isolate = new ivm.Isolate({ memoryLimit: 8 });
-  const context = await isolate.createContext();
-
+module.exports = async function addTrap(isolate, context, script) {
   const cherowScript = await isolate.compileScript(cherowScriptContent);
   await cherowScript.run(context);
 
-  const externalCopyUserContent = new ivm.ExternalCopy(userScriptContent);
+  const externalCopyUserContent = new ivm.ExternalCopy(script);
   await context.global.set("originalCode", externalCopyUserContent.copyInto());
 
   const processUserContentScript = await isolate.compileScript(
     "" + parseCodeAndModify + ";parseCodeAndModify()"
   );
 
-  const result = await processUserContentScript.run(context);
-  return result || userScriptContent;
+  try {
+    const result = await processUserContentScript.run(context);
+    return result || script;
+  } catch (error) {
+    // return null;
+    return Promise.reject(error);
+  }
 };

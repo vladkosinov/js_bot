@@ -1,5 +1,5 @@
 const cherow = require("/Users/user/cherow/dist/cherow.cjs.js");
-const originalCode = `{}`;
+const originalCode = `asd`;
 
 const ast = cherow.parse(originalCode, {
   ranges: true

@@ -1,29 +1,36 @@
-const assert = require("assert");
+const ivm = require("isolated-vm");
 const preprocessUserScript = require("./addTrapForLastExpression");
 
-// crash on invalid code
-const promise0 = preprocessUserScript("asda=").catch(error => {
-  // ok
+function test(code, expected) {
+  const isolate = new ivm.Isolate({ memoryLimit: 8 });
+  const context = isolate.createContextSync();
+
+  preprocessUserScript(isolate, context, code).then(result => {
+    if (result !== expected) {
+      console.log("Expteced", expected, "got:", result);
+      throw new Error(result + "!==" + expected);
+    }
+  });
+}
+
+Promise.all([
+  test("if(1){}", "if(1){}"),
+  test("a;if(1){};;a", "a;if(1){};;;this.JS_BOT_LAST_EXPRESSION_RESULT=a"),
+  test("1", ";this.JS_BOT_LAST_EXPRESSION_RESULT=1"),
+  test("{}", ";this.JS_BOT_LAST_EXPRESSION_RESULT={}")
+]).then(() => {
+  console.log("Success:", "transforms");
 });
 
-// not modified
-const promise1 = preprocessUserScript("if(1){}").then(result => {
-  assert(result === "if(1){}");
-});
+{
+  const isolate = new ivm.Isolate({ memoryLimit: 8 });
+  const context = isolate.createContextSync();
 
-// custom code added corrected
-const promise2 = preprocessUserScript("a;if(1){};;a").then(result => {
-  assert(result === "a;if(1){};;;this.JS_BOT_LAST_EXPRESSION_RESULT=a");
-});
-
-const promise3 = preprocessUserScript("1").then(result => {
-  assert(result === ";this.JS_BOT_LAST_EXPRESSION_RESULT=1");
-});
-
-const promise4 = preprocessUserScript("{}").then(result => {
-  assert(result === ";this.JS_BOT_LAST_EXPRESSION_RESULT={}");
-});
-
-Promise.all([promise0, promise1, promise2, promise3, promise4]).then(() => {
-  console.log("pass");
-});
+  preprocessUserScript(isolate, context, "asda=")
+    .then(() => {
+      console.log("Failed:", "should not resolve on invalid code");
+    })
+    .catch(error => {
+      console.log("Success:", "crash on invalid code");
+    });
+}
