@@ -2,6 +2,7 @@ const Telegraf = require("telegraf");
 const { exec } = require("./exec");
 
 const bot = new Telegraf("DELETED_BEFORE_PUBLISH");
+// const bot = new Telegraf("DELETED_BEFORE_PUBLISH");
 
 bot.start(ctx => ctx.reply("Send me JS and I'll execute it😎"));
 
@@ -62,15 +63,50 @@ function logRunCodeResult(execResult) {
   }
 }
 
-bot.on("text", async function(ctx) {
-  console.log("Message", ctx.message);
-
-  const inputCode = ctx.message.text;
+async function execCode(inputCode, ctx) {
   const execResult = await exec(inputCode);
+  console.log("execResult", execResult);
   logRunCodeResult(ctx, execResult);
-  const replyMessage = extractHumanOutputFromExecResult(execResult);
 
-  ctx.reply(filterOutput(replyMessage));
+  const replyMessage = extractHumanOutputFromExecResult(execResult);
+  const filteredOutput = filterOutput(replyMessage);
+
+  return filteredOutput;   
+}
+
+bot.on("text", async function(ctx) {
+  const inputCode = ctx.message.text;
+
+  const result = await execCode(inputCode, ctx);
+  console.log("result", result);
+
+  ctx.reply(result);
 });
+
+bot.on('inline_query', async (ctx) => {
+  const resultCode = await execCode(ctx.update.inline_query.query, ctx);
+
+  const code = ctx.update.inline_query.query;
+  const result = [{
+    type: "article",
+    id: ctx.update.inline_query.query.slice(0,64) || "/0",
+    title: "> " +  code,
+    description: "< " + resultCode,
+    input_message_content: {
+      message_text: `<b>&gt;</b> <pre><code class="language-javascript">${code}</code></pre>\n<b>&lt;</b> <pre><code class="language-javascript">${resultCode}</code></pre>`,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    },
+    reply_markup: {
+      inline_keyboard: [
+        [
+          // {text: 'Edit', switch_inline_query_current_chat: code}
+        ]
+      ]
+    }
+  }]
+
+  ctx.answerInlineQuery(result)
+})
 
 bot.launch();
