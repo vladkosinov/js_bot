@@ -4,8 +4,5 @@
     "isolated-vm": "^1.7.9",
     "telegraf": "^3.27.1"
   },
-  "devDependencies": {
-    "shipit-cli": "^4.2.0",
-    "shipit-deploy": "^4.1.4"
-  }
+  "devDependencies": {}
 }

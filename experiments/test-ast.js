@@ -1,4 +1,4 @@
-const cherow = require("/Users/user/cherow/dist/cherow.cjs.js");
+const cherow = require("/Users/user/projects/workspace/cherow/dist/cherow.cjs.js");
 const originalCode = `asd`;
 
 const ast = cherow.parse(originalCode, {
