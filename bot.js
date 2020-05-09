@@ -1,8 +1,7 @@
 const Telegraf = require("telegraf");
 const { exec } = require("./exec");
 
-const bot = new Telegraf("DELETED_BEFORE_PUBLISH");
-// const bot = new Telegraf("DELETED_BEFORE_PUBLISH");
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
 bot.start(ctx => ctx.reply("Send me JS and I'll execute it😎"));
 
