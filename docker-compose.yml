@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+    js-bot-telegram:
+        build:
+            context: .
+        env_file:
+            - ./crypted/prod.env
+        container_name: js-bot-telegram
+        hostname: js-bot-telegram
+        restart: always
