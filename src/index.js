@@ -1,4 +1,4 @@
-const Telegraf = require("telegraf");
+const { Telegraf } = require("telegraf");
 const { exec } = require("./exec");
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
