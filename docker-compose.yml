@@ -1,8 +1,7 @@
 version: '3.8'
 services:
     js-bot-telegram:
-        build:
-            context: .
+        image: vlkosinov/js_bot
         env_file:
             - ./crypted/prod.env
         container_name: js-bot-telegram
