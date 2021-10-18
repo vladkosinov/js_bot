@@ -1,5 +1,5 @@
 # node_modules
-FROM mhart/alpine-node:14.16.1 AS node_modules
+FROM mhart/alpine-node:16.4.2 AS node_modules
 RUN apk add --no-cache make gcc g++ python
 
 WORKDIR /app
