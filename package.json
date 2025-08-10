@@ -2,7 +2,7 @@
   "dependencies": {
     "cherow": "1.6.9",
     "isolated-vm": "4.0.0",
-    "telegraf": "4.3.0"
+    "telegraf": "4.16.3"
   },
   "devDependencies": {}
 }
